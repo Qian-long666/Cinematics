@@ -1,9 +1,10 @@
 package com.example.Cinematics.service;
 
 import com.example.Cinematics.converter.MovieConverter;
-import com.example.Cinematics.dao.MovieRepository;
-import com.example.Cinematics.dao.Movie;
+import com.example.Cinematics.dao.*;
 import com.example.Cinematics.dto.MovieDTO;
+import com.example.Cinematics.dto.MovieLineDTO;
+import com.example.Cinematics.dto.MovieSceneDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -19,6 +20,20 @@ public class MovieServiceImpl implements MovieService {
     //依赖注入
     @Autowired
     private MovieRepository movieRepository;
+
+    @Autowired
+    private CommentRepository commentRepository;
+
+    @Autowired
+    private MovieLineRepository movieLineRepository;
+
+    @Autowired
+    private MovieSceneRepository movieSceneRepository;
+
+    @Autowired
+    private OutstandingCreationRepository outstandingCreationRepository;
+
+
 
     @Override
     public MovieDTO getMovieById(Long id) {
@@ -74,6 +89,59 @@ public class MovieServiceImpl implements MovieService {
         // 3. 保存
         Movie updatedMovie = movieRepository.save(movie);
         return MovieConverter.convertMovie(updatedMovie);
+    }
+
+
+
+    @Override
+    public List<Movie> searchMovies(String name, Integer time, String nation) {
+        return movieRepository.searchMovies(name, time, nation);
+    }
+
+    @Override
+    public MovieDTO getMovieDetail(Long id) {
+        // 1. 查电影基础信息
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("电影不存在，ID：" + id));
+
+        // 2. 查关联数据
+        List<Comment> comments = commentRepository.findByMovieId(id);
+        List<MovieLine> lines = movieLineRepository.findByMovieId(id);
+        List<MovieScene> scenes = movieSceneRepository.findByMovieId(id);
+        List<OutstandingCreation> links = outstandingCreationRepository.findByMovieId(id);
+
+        // 3. 基础信息转 DTO
+        MovieDTO dto = MovieConverter.convertMovie(movie);
+
+        // 4. 台词转换（实体 → DTO）
+        List<MovieLineDTO> lineDTOs = new java.util.ArrayList<>();
+        for (MovieLine line : lines) {
+            MovieLineDTO lineDTO = new MovieLineDTO();
+            lineDTO.setId(line.getId());
+            lineDTO.setQuoteZh(line.getQuoteZh());
+            lineDTO.setQuoteOri(line.getQuoteOri());
+            lineDTO.setQuoteOrder(line.getQuoteOrder());
+            lineDTOs.add(lineDTO);
+        }
+        dto.setLines(lineDTOs);
+
+        // 5. 画面转换（实体 → DTO）
+        List<MovieSceneDTO> sceneDTOs = new java.util.ArrayList<>();
+        for (MovieScene scene : scenes) {
+            MovieSceneDTO sceneDTO = new MovieSceneDTO();
+            sceneDTO.setId(scene.getId());
+            sceneDTO.setImageUrl(scene.getImageUrl());
+            sceneDTO.setCaption(scene.getCaption());
+            sceneDTO.setSceneOrder(scene.getSceneOrder());
+            sceneDTOs.add(sceneDTO);
+        }
+        dto.setScenes(sceneDTOs);
+
+        // 6. 评论和链接直接塞（类型一致，不需要转）
+        dto.setComments(comments);
+        dto.setLinks(links);
+
+        return dto;
     }
 
 }

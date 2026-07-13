@@ -1,6 +1,8 @@
 import { movieApi } from '@/api/movieApi'
 
 export const movieService = {
+
+    //四个管理员功能：增删查改
     async getMovieById(id) {
         if (!id) throw new Error('ID不能为空')
         return await movieApi.getById(id)
@@ -26,5 +28,10 @@ export const movieService = {
     async deleteMovie(id) {
         if (!id) throw new Error('ID不能为空')
         return await movieApi.delete(id)
+    },
+
+    async searchMovies(params) {
+        const result = await movieApi.searchMovies(params)
+        return result
     }
 }

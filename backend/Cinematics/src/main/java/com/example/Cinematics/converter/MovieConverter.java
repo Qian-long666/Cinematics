@@ -18,6 +18,7 @@ public class MovieConverter {
         movieDTO.setDirector(movie.getDirector());
         movieDTO.setActor(movie.getActor());
         movieDTO.setMedium(movie.getMedium());
+        movieDTO.setPoster_url(movie.getPosterUrl());
 
         return movieDTO;
     }
@@ -30,6 +31,7 @@ public class MovieConverter {
         movie.setType(movieDTO.getType());
         movie.setDirector(movieDTO.getDirector());
         movie.setActor(movieDTO.getActor());
+        movie.setPosterUrl(movieDTO.getPoster_url());
         movie.setMedium("电影");
 
         return movie;

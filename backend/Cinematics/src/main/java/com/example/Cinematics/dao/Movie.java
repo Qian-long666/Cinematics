@@ -37,4 +37,7 @@ public class Movie {
     @Column(name = "medium")
     private String medium;
 
+    @Column(name = "poster_url")
+    private String posterUrl;
+
 }

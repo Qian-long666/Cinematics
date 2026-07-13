@@ -24,4 +24,15 @@ body {
   font-family: Arial, sans-serif;
   background-color: #f0f2f5;
 }
+
+/* 隐藏滚动条，但依然可以滚动 */
+::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
+
+/* 对 Firefox 也生效 */
+* {
+  scrollbar-width: none;
+}
 </style>

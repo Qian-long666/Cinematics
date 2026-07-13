@@ -29,5 +29,14 @@ export const movieApi = {
             url: `/movie/${id}`,
             method: 'delete'
         })
+    },
+
+    // 多条件搜索
+    searchMovies(params) {
+        return request({
+            url: '/movies/search',
+            method: 'get',
+            params
+        })
     }
 }
