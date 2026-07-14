@@ -1,15 +1,16 @@
 package com.example.Cinematics.dao;
 
-import com.example.Cinematics.dao.Comment;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    @Query("SELECT c FROM Comment c WHERE c.movieId = :movieId ORDER BY c.createdAt DESC")
-    List<Comment> findByMovieId(@Param("movieId") Long movieId);
+    /** 按电影 ID 查所有评论，按时间正序（旧→新） */
+    List<Comment> findByMovieIdOrderByCreatedAtAsc(Long movieId);
+
+    /** 按用户 ID 查所有评论，按时间正序（旧→新） */
+    List<Comment> findByUserIdOrderByCreatedAtAsc(Long userId);
 }

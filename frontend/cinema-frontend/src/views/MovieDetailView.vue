@@ -105,7 +105,7 @@
            二、经典台词 · 翻牌
            ════════════════════════════════════════════════════════════ -->
       <section ref="secQuotes" class="sec">
-        <div class="sec-head"><h2>经典台词</h2><p>Memorable Lines</p></div>
+        <div class="sec-head"><h2>经典台词</h2><p>Classic Lines</p></div>
         <div v-if="movie.lines && movie.lines.length" class="quotes-grid">
           <div v-for="line in movie.lines" :key="line.id" class="quote-card">
             <div class="quote-inner">
@@ -128,7 +128,7 @@
            三、经典镜头 · 瀑布流
            ════════════════════════════════════════════════════════════ -->
       <section ref="secScenes" class="sec">
-        <div class="sec-head"><h2>经典镜头</h2><p>Iconic Scenes</p></div>
+        <div class="sec-head"><h2>经典镜头</h2><p>Classic Scenes</p></div>
         <div v-if="movie.scenes && movie.scenes.length" class="scenes-wall">
           <div v-for="scene in movie.scenes" :key="scene.id" class="scene-brick">
             <img :src="scene.imageUrl" :alt="scene.caption || '经典画面'" />
@@ -163,18 +163,41 @@
       <span class="sec-divider"></span>
 
       <!-- ════════════════════════════════════════════════════════════
-           五、评论 · 外壳
+           五、评论
            ════════════════════════════════════════════════════════════ -->
       <section ref="secComments" class="sec">
         <div class="sec-head"><h2>评论</h2><p>Comments &amp; Reviews</p></div>
-        <div class="comment-form">
-          <input placeholder="你的名字（可选）" class="comment-input comment-input--name" />
-          <input placeholder="写评论..." class="comment-input comment-input--body" />
-          <button class="comment-submit">发布</button>
+
+        <!-- 筛选切换 -->
+        <div class="comment-tabs">
+          <button class="comment-tab" :class="{ 'comment-tab--active': commentFilter === 'all' }"
+                  @click="commentFilter = 'all'">所有评论</button>
+          <button class="comment-tab" :class="{ 'comment-tab--active': commentFilter === 'mine' }"
+                  @click="commentFilter = 'mine'">只看自己</button>
         </div>
-        <div v-if="movie.comments && movie.comments.length" class="comment-list">
-          <div v-for="c in movie.comments" :key="c.id" class="comment-item">
-            <div class="comment-item-head"><strong>{{ c.username || '匿名' }}</strong><span>{{ c.createdAt || '' }}</span></div>
+
+        <!-- 发表 -->
+        <div class="comment-form">
+          <input v-model="commentContent" placeholder="写评论..." class="comment-input"
+                 @keyup.enter="submitComment" />
+          <button class="comment-submit" @click="submitComment" :disabled="commentSubmitting">
+            <template v-if="!commentSubmitting">发布</template>
+            <span v-else class="comment-submit-spinner"></span>
+          </button>
+        </div>
+
+        <!-- 列表 -->
+        <div v-if="filteredComments.length" class="comment-list">
+          <div v-for="c in filteredComments" :key="c.id" class="comment-item">
+            <div class="comment-item-head">
+              <strong>{{ c.username || '匿名' }}</strong>
+              <span class="comment-item-role" :class="{ 'comment-item-role--admin': c.role === 'ADMIN' }">
+                {{ c.role === 'ADMIN' ? '管理员' : '用户' }}
+              </span>
+              <span class="comment-item-time">{{ c.createdAt }}</span>
+              <button v-if="c.username === currentUser || isAdminUser"
+                      class="comment-item-del" @click="deleteComment(c.id)">删除</button>
+            </div>
             <p>{{ c.content }}</p>
           </div>
         </div>
@@ -186,14 +209,60 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { movieService } from '@/services/movieService'
+import { movieApi } from '@/api/movieApi.js'
+import { getUsername, isAdmin } from '@/auth.js'
 
 const route = useRoute()
 const router = useRouter()
 const movie = ref(null)
 const loading = ref(true)
+
+const currentUser = getUsername()
+const isAdminUser = isAdmin()
+
+// 评论
+const commentContent = ref('')
+const commentSubmitting = ref(false)
+const commentFilter = ref('all')
+const comments = ref([])
+
+const filteredComments = computed(() => {
+  if (commentFilter.value === 'mine') {
+    const me = getUsername()
+    return comments.value.filter(c => c.username === me)
+  }
+  return comments.value
+})
+
+async function fetchComments() {
+  try {
+    comments.value = await movieApi.getCommentsByMovie(route.params.id)
+  } catch { comments.value = [] }
+}
+
+async function submitComment() {
+  if (!commentContent.value.trim()) return
+  commentSubmitting.value = true
+  try {
+    await movieApi.addComment({
+      movieId: Number(route.params.id),
+      content: commentContent.value.trim()
+    })
+    commentContent.value = ''
+    await fetchComments()
+  } catch { /* 静默失败 */ }
+  finally { commentSubmitting.value = false }
+}
+
+async function deleteComment(id) {
+  try {
+    await movieApi.deleteComment(id)
+    await fetchComments()
+  } catch { /* 静默失败 */ }
+}
 
 const secHero     = ref(null)
 const secQuotes   = ref(null)
@@ -234,6 +303,7 @@ function scrollTo(item) {
 onMounted(async () => {
   try {
     movie.value = await movieService.getMovieById(route.params.id)
+    await fetchComments()
   } catch {
     movie.value = null
   } finally {
@@ -603,9 +673,30 @@ function goBack() { router.back() }
 /* ==================================================================
    FIVE · COMMENTS
    ================================================================== */
-.comment-form { display: flex; gap: 10px; margin-bottom: 28px; }
+.comment-tabs {
+  display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;
+}
+.comment-tab {
+  padding: 6px 18px; border-radius: 20px;
+  border: 1px solid rgba(237,228,219,0.08);
+  background: rgba(237,228,219,0.02);
+  color: var(--cream-dim); font-size: 12px; font-family: inherit;
+  letter-spacing: 1px; cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+}
+.comment-tab:hover {
+  border-color: rgba(237,228,219,0.2);
+  color: var(--cream);
+}
+.comment-tab--active {
+  background: rgba(212,165,116,0.12);
+  border-color: rgba(212,165,116,0.3);
+  color: #D4A574;
+}
+
+.comment-form { display: flex; gap: 10px; margin-bottom: 24px; }
 .comment-input {
-  padding: 11px 14px;
+  flex: 1; padding: 11px 14px;
   border: 1px solid rgba(237,228,219,0.08);
   border-radius: 10px;
   background: rgba(237,228,219,0.03);
@@ -616,10 +707,9 @@ function goBack() { router.back() }
 }
 .comment-input::placeholder { color: rgba(237,228,219,0.15); }
 .comment-input:focus { border-color: rgba(212,165,116,0.3); }
-.comment-input--name { flex: 1; }
-.comment-input--body { flex: 3; }
+
 .comment-submit {
-  flex-shrink: 0; padding: 11px 22px;
+  flex-shrink: 0; padding: 11px 22px; position: relative;
   border: 1px solid rgba(212,165,116,0.2);
   border-radius: 10px;
   background: rgba(212,165,116,0.08);
@@ -633,6 +723,16 @@ function goBack() { router.back() }
   border-color: rgba(212,165,116,0.4);
   box-shadow: 0 0 16px rgba(212,165,116,0.1);
 }
+.comment-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.comment-submit-spinner {
+  display: block; width: 14px; height: 14px; margin: 0 auto;
+  border: 2px solid rgba(212,165,116,0.2);
+  border-top-color: #D4A574; border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .comment-list { display: flex; flex-direction: column; gap: 10px; }
 .comment-item {
   padding: 14px 18px; border-radius: 12px;
@@ -640,11 +740,36 @@ function goBack() { router.back() }
   border: 1px solid rgba(237,228,219,0.04);
 }
 .comment-item-head {
-  display: flex; justify-content: space-between;
-  font-size: 12px; color: var(--cream-dim);
-  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; margin-bottom: 6px;
 }
 .comment-item-head strong { color: var(--cream); font-weight: 600; }
+.comment-item-role {
+  font-size: 10px; padding: 2px 7px; border-radius: 4px;
+  background: rgba(237,228,219,0.05); color: var(--cream-dim);
+  letter-spacing: 0.5px;
+}
+.comment-item-role--admin {
+  background: rgba(212,165,116,0.1); color: var(--amber);
+}
+.comment-item-time {
+  margin-left: auto; color: rgba(237,228,219,0.25);
+  font-family: Georgia,serif;
+}
+.comment-item-del {
+  padding: 2px 8px;
+  border: 1px solid rgba(201,125,125,0.15);
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(201,125,125,0.5);
+  font-size: 10px; font-family: inherit; letter-spacing: 1px; cursor: pointer;
+  transition: all 0.3s;
+}
+.comment-item-del:hover {
+  background: rgba(201,125,125,0.1);
+  border-color: rgba(201,125,125,0.35);
+  color: #C97D7D;
+}
 .comment-item p { margin: 0; font-size: 13px; color: var(--cream-dim); line-height: 1.6; letter-spacing: 0.5px; }
 
 /* ==================================================================

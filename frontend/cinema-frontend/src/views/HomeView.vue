@@ -31,8 +31,8 @@
     <!-- ================================================================
          两个入口
          ================================================================ -->
-    <!-- 管理员入口——左下 -->
-    <div class="portal portal--admin" @click.stop="toggleAdmin">
+    <!-- 管理员入口——左下（仅管理员可见） -->
+    <div v-if="isAdminUser" class="portal portal--admin" @click.stop="toggleAdmin">
       <span class="portal-ring"></span>
       <span class="portal-icon">☰</span>
       <span class="portal-label">管理</span>
@@ -43,6 +43,12 @@
       <span class="portal-ring"></span>
       <span class="portal-icon">⌕</span>
       <span class="portal-label">探索</span>
+    </div>
+
+    <!-- 用户信息 -->
+    <div class="user-info">
+      <span class="user-info-name">{{ username }}</span>
+      <button class="user-info-logout" @click="handleLogout">退出</button>
     </div>
 
     <!-- ================================================================
@@ -108,6 +114,16 @@
               <small>Explorer</small>
             </span>
           </button>
+          <button class="g-card" style="--stagger:1" @click="goTo('/my-comments')">
+            <span class="g-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <span class="g-card-text">
+              <em>生生不息</em>
+              <small>Comments</small>
+            </span>
+          </button>
+
         </div>
       </div>
     </transition>
@@ -124,15 +140,19 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { isAdmin, getUsername, clearAuth } from '@/auth.js'
 
 const router = useRouter()
 const showAdmin = ref(false)
 const showUser  = ref(false)
+const isAdminUser = ref(isAdmin())
+const username = ref(getUsername())
 
 function toggleAdmin() { showAdmin.value = !showAdmin.value; showUser.value = false }
 function toggleUser()  { showUser.value  = !showUser.value;  showAdmin.value = false }
 function goTo(path)    { showAdmin.value = false; showUser.value = false; router.push(path) }
 function closeAll()    { showAdmin.value = false; showUser.value = false }
+function handleLogout() { clearAuth(); router.push('/login') }
 
 /* 粒子参数——确定性伪随机，不在模板里 Math.random */
 const particles = computed(() => {
@@ -283,6 +303,31 @@ const particles = computed(() => {
 .portal--user  { top: 36px; right: 36px; }
 
 /* ==================================================================
+   USER INFO
+   ================================================================== */
+.user-info {
+  position: fixed; top: 40px; right: 108px; z-index: 25;
+  display: flex; align-items: center; gap: 12px;
+}
+.user-info-name {
+  font-size: 12px; color: var(--cream-dim); letter-spacing: 2px;
+}
+.user-info-logout {
+  padding: 4px 12px;
+  border: 1px solid rgba(237,228,219,0.12);
+  border-radius: 6px;
+  background: rgba(237,228,219,0.04);
+  color: var(--cream-dim);
+  font-size: 11px; font-family: inherit; letter-spacing: 1px; cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+}
+.user-info-logout:hover {
+  border-color: rgba(201,125,125,0.3);
+  color: #C97D7D;
+  background: rgba(201,125,125,0.06);
+}
+
+/* ==================================================================
    MENU PANELS
    ================================================================== */
 .menu-panel {
@@ -424,5 +469,7 @@ const particles = computed(() => {
   .portal--user  { top: 20px; right: 20px; }
   .g-card { padding: 11px 14px; gap: 10px; }
   .g-card-icon { width: 32px; height: 32px; border-radius: 8px; }
+  .user-info { top: 20px; right: 80px; gap: 6px; }
+  .user-info-name { font-size: 10px; }
 }
 </style>

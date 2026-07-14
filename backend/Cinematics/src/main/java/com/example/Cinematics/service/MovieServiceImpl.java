@@ -105,7 +105,7 @@ public class MovieServiceImpl implements MovieService {
                 .orElseThrow(() -> new RuntimeException("电影不存在，ID：" + id));
 
         // 2. 查关联数据
-        List<Comment> comments = commentRepository.findByMovieId(id);
+        List<Comment> comments = commentRepository.findByMovieIdOrderByCreatedAtAsc(id);
         List<MovieLine> lines = movieLineRepository.findByMovieId(id);
         List<MovieScene> scenes = movieSceneRepository.findByMovieId(id);
         List<OutstandingCreation> links = outstandingCreationRepository.findByMovieId(id);

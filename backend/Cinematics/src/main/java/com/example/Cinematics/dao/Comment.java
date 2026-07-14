@@ -19,9 +19,14 @@ public class Comment {
     @Column(nullable = false, length = 50)
     private String username;
 
+    /** 评论人 — 关联 User 表 */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

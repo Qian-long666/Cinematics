@@ -2,10 +2,9 @@ spring:
   # ========== 数据源配置 ==========
   datasource:
     url: jdbc:mysql://localhost:3306/test?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
-    # ↑ 数据库地址：localhost本机，3306端口，cinematics数据库名
     username: root                    # MySQL用户名
-    password: 123qweasd!                  # ⚠️ 改成你自己的MySQL密码
-    driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL驱动
+    password: your_mysql_password     # ⚠️ 改成你自己的MySQL密码
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   # ========== JPA（ORM框架）配置 ==========
   jpa:
@@ -16,3 +15,13 @@ spring:
       hibernate:
         format_sql: true  # SQL格式化输出（更易读）
         dialect: org.hibernate.dialect.MySQLDialect
+
+# ========== JWT 配置 ==========
+jwt:
+  secret: your_jwt_secret_key_at_least_32_characters  # ⚠️ 生产环境换成复杂密钥（≥32字符）
+  expiration: 86400000   # Token 有效期（毫秒），86400000 = 24小时
+
+# ========== 默认管理员账户 ==========
+admin:
+  default-username: admin
+  default-password: your_admin_password   # ⚠️ 改成你自己的管理员密码

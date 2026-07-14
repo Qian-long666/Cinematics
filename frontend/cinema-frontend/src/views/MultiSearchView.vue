@@ -34,6 +34,13 @@
          卡片容器
          ================================================================ -->
     <div class="container">
+
+      <button class="back-btn" @click="$router.push('/')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.5" stroke-linecap="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        返回
+      </button>
+
       <!-- 标题 -->
       <div class="head">
         <h1>博海拾贝</h1>
@@ -343,6 +350,23 @@ function goToDetail(id) {
       0 20px 60px rgba(0,0,0,0.45),
       inset 0 1px 0 rgba(255,255,255,0.015);
 }
+
+.back-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 16px; margin-bottom: 24px;
+  border: 1px solid rgba(237,228,219,0.08);
+  border-radius: 8px;
+  background: rgba(237,228,219,0.03);
+  color: var(--cream-dim);
+  font-size: 12px; font-family: inherit; letter-spacing: 1px; cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+}
+.back-btn:hover {
+  background: rgba(237,228,219,0.06);
+  border-color: rgba(237,228,219,0.15);
+  color: var(--cream);
+}
+
 
 /* ==================================================================
    HEAD
